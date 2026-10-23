@@ -1,10 +1,5 @@
 name: Publish temporary recruiting preview
 on:
-  push:
-    branches: [share-nanning-ai-recruit-2026]
-    paths:
-      - index.html
-      - .github/workflows/publish-temp.yml
   workflow_dispatch:
 permissions:
   contents: write
