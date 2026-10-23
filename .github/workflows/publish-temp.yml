@@ -1,0 +1,39 @@
+name: Publish temporary recruiting preview
+on:
+  push:
+    branches: [share-nanning-ai-recruit-2026]
+    paths:
+      - index.html
+      - .github/workflows/publish-temp.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish standalone HTML with no new account
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s index.html
+          response=$(curl -fsS --retry 2 --connect-timeout 15 --max-time 100 \
+            -X POST 'https://ship.page/deploy' \
+            -H 'Content-Type: text/html' \
+            --data-binary @index.html)
+          printf '%s' "$response" > deploy-response.json
+          url=$(python3 -c 'import json; d=json.load(open("deploy-response.json")); print(d.get("url") or (d.get("data") or {}).get("url") or "")')
+          if [[ ! "$url" =~ ^https:// ]]; then
+            echo "Deployment provider returned no HTTPS URL"
+            sed -n '1,20p' deploy-response.json
+            exit 1
+          fi
+          printf '%s\n' "$url" > LIVE_URL.txt
+          echo "Temporary recruiting page: $url"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add LIVE_URL.txt
+          git commit -m 'Record temporary recruiting page URL [skip ci]'
+          git push origin HEAD:share-nanning-ai-recruit-2026
