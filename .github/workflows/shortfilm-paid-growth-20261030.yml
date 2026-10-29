@@ -1,0 +1,39 @@
+name: Finish short-film paid-growth report
+on:
+  push:
+    branches: [gh-pages]
+    paths:
+      - .github/report-parts/paid-growth-20261029/apply.py
+      - .github/report-parts/paid-growth-20261029/content.html
+      - .github/workflows/shortfilm-paid-growth-20261030.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: shortfilm-paid-growth-20261030
+  cancel-in-progress: false
+jobs:
+  revise:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+      - name: Apply scoped report edit and validate anchors
+        run: python3 .github/report-parts/paid-growth-20261029/apply.py .
+      - name: Save only the existing report
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s shortfilm/index.html
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add shortfilm/index.html
+          git commit -m 'Add paid-growth evidence, company net-revenue calculator and staged pilot [skip ci]'
+          git push origin HEAD:gh-pages
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shortfilm-paid-growth-20261030
+          path: shortfilm/index.html
+          retention-days: 7
